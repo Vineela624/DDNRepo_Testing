@@ -1,10 +1,11 @@
 // Jenkinsfile (Declarative Pipeline)
 pipeline {
+    // CORRECT: Specifying the 'any' agent type inside the block
     agent {
-        any // Use 'any' to run on any available Jenkins agent/node
+        any 
     }
 
-    // Define environment variables, like the report directory
+    // Define environment variables
     environment {
         ROBOT_OPTIONS = "--outputdir Reports --logtitle 'Robot Framework Execution Log'"
     }
@@ -12,31 +13,24 @@ pipeline {
     stages {
         stage('Setup Environment') {
             steps {
-                // Assuming Python is accessible on the agent, install dependencies
+                echo 'Installing Robot Framework dependencies...'
+                // Install dependencies. Ensure Python/pip is available on the 'any' agent.
                 sh 'pip install robotframework'
-                sh 'pip install robotframework-seleniumlibrary' // Include only necessary libs
-                sh 'mkdir -p Reports' // Ensure the output directory exists
-                
-                // Confirm the Python library file is in the workspace
-                sh 'ls -l TestAutomationLibrary.py'
+                sh 'pip install robotframework-seleniumlibrary' 
+                sh 'mkdir -p Reports' 
+                sh 'ls -l TestAutomationLibrary.py' // Check for the library
             }
         }
         
-        // --- 1. Multi-tenancy Test Suite ---
+        // 1. Multi-tenancy Test Suite
         stage('Run Multi-tenancy Tests (Isolation)') {
             steps {
                 echo 'Starting Multi-tenancy Isolation checks...'
-                // Run the test suite and save results to a unique subdirectory
                 sh "robot ${ROBOT_OPTIONS}/MT TestSuit_MultiTenancy.robot"
-            }
-            post {
-                failure {
-                    echo 'Multi-tenancy tests failed. Stopping pipeline.'
-                }
             }
         }
         
-        // --- 2. Utils Test Suite (Provisioning & FS Commands) ---
+        // 2. Utils Test Suite
         stage('Run Utils Tests (Tools & Filesystem)') {
             steps {
                 echo 'Starting Utility and Filesystem command checks...'
@@ -44,7 +38,7 @@ pipeline {
             }
         }
         
-        // --- 3. Hardware and VM Config Test Suite ---
+        // 3. Hardware and VM Config Test Suite
         stage('Run Config Tests (Limits & Snapshot)') {
             steps {
                 echo 'Starting Hardware and VM Configuration checks...'
@@ -52,7 +46,7 @@ pipeline {
             }
         }
         
-        // --- 4. Redundancy Checks Test Suite ---
+        // 4. Redundancy Checks Test Suite
         stage('Run Redundancy Tests (HA & Failover)') {
             steps {
                 echo 'Starting Redundancy and Failover checks...'
@@ -63,12 +57,8 @@ pipeline {
     
     post {
         always {
-            // Archive all generated reports regardless of the test result
             archiveArtifacts artifacts: 'Reports/**/*'
-            
-            // Publish test results to Jenkins UI (requires Junit Plugin)
             junit 'Reports/**/*.xml' 
-            
             echo 'Robot Framework execution finished.'
         }
     }
