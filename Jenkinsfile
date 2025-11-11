@@ -1,10 +1,9 @@
 // Jenkinsfile (Declarative Pipeline)
 pipeline {
     agent {
-      any
-        }
+        any // Use 'any' to run on any available Jenkins agent/node
     }
-    
+
     // Define environment variables, like the report directory
     environment {
         ROBOT_OPTIONS = "--outputdir Reports --logtitle 'Robot Framework Execution Log'"
@@ -13,11 +12,12 @@ pipeline {
     stages {
         stage('Setup Environment') {
             steps {
+                // Assuming Python is accessible on the agent, install dependencies
                 sh 'pip install robotframework'
-                sh 'pip install robotframework-seleniumlibrary' // Add any other required libraries here
+                sh 'pip install robotframework-seleniumlibrary' // Include only necessary libs
                 sh 'mkdir -p Reports' // Ensure the output directory exists
                 
-                // Print a quick check to confirm the library is found
+                // Confirm the Python library file is in the workspace
                 sh 'ls -l TestAutomationLibrary.py'
             }
         }
@@ -26,6 +26,7 @@ pipeline {
         stage('Run Multi-tenancy Tests (Isolation)') {
             steps {
                 echo 'Starting Multi-tenancy Isolation checks...'
+                // Run the test suite and save results to a unique subdirectory
                 sh "robot ${ROBOT_OPTIONS}/MT TestSuit_MultiTenancy.robot"
             }
             post {
@@ -65,10 +66,10 @@ pipeline {
             // Archive all generated reports regardless of the test result
             archiveArtifacts artifacts: 'Reports/**/*'
             
-            // Generate and publish the consolidated HTML report (requires Robot plugin)
+            // Publish test results to Jenkins UI (requires Junit Plugin)
             junit 'Reports/**/*.xml' 
             
-            echo 'Robot Framework execution finished. Check the console output and reports.'
+            echo 'Robot Framework execution finished.'
         }
     }
 }
