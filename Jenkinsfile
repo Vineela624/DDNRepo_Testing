@@ -1,11 +1,7 @@
 // Jenkinsfile (Declarative Pipeline)
 pipeline {
     agent {
-        // Use a Docker image with Python, the base for Robot Framework
-        docker {
-            image 'python:3.9-slim'
-            // Ensure the container starts in the workspace directory
-            args '-u root' 
+      any
         }
     }
     
